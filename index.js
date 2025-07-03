@@ -1,15 +1,19 @@
-require('dotenv').config();
+equire('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
-const { createClient } = require('SUPABASE_URL/SUPABASE_KEY');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 const upload = multer({ storage: multer.memoryStorage() });
+console.log('URL:', process.env.SUPABASE_URL);
+console.log('KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 // 1. 모든 사용자 운동 현황 조회
 app.get('/status', async (req, res) => {
