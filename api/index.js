@@ -21,8 +21,14 @@ app.get('/api/status', (req, res) => {
 });
 
 // 2. 사용자 운동 현황 조회 (예시)
-app.get('/api/users', (req, res) => {
-  res.json([{ id: 1, name: 'user1' }]);
+app.get('/api/users', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('users').select('*');
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // 3. 사진 업로드 및 인증 (예시)
