@@ -9,7 +9,7 @@ const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const app = express();
-app.use(cors({ origin: '*' }));
+app.use(cors());
 app.use(express.json());
 
 // 파일 업로드용 multer
@@ -21,14 +21,8 @@ app.get('/api/status', (req, res) => {
 });
 
 // 2. 사용자 운동 현황 조회 (예시)
-app.get('/api/users', async (req, res) => {
-  try {
-    const { data, error } = await supabase.from('users').select('*');
-    if (error) throw error;
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+app.get('/api/users', (req, res) => {
+  res.json([{ id: 1, name: 'user1' }]);
 });
 
 // 3. 사진 업로드 및 인증 (예시)
@@ -61,6 +55,10 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+module.exports = (req, res) => {
+  app(req, res);
+};
 
 // 서버리스 함수 방식: module.exports = app
 module.exports = app;
