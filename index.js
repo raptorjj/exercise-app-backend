@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
-const { createClient } = require('@supabase/supabase-js');
+const { createClient } = require('supabase/supabase-js');
 
 const app = express();
 app.use(cors());
