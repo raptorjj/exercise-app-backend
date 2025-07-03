@@ -8,12 +8,20 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "@supabase/supabase-js": "^2.50.3",
     "cors": "^2.8.5",
     "dotenv": "^17.0.1",
     "express": "^5.1.0",
     "multer": "^2.0.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/raptorjj/exercise-backend.git"
+  },
+  "bugs": {
+    "url": "https://github.com/raptorjj/exercise-backend/issues"
+  },
+  "homepage": "https://github.com/raptorjj/exercise-backend#readme",
+  "description": ""
 }
