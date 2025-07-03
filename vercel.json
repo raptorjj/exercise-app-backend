@@ -4,6 +4,10 @@
     { "src": "api/index.js", "use": "@vercel/node" }
   ],
   "routes": [
+<<<<<<< HEAD
     { "src": "/api/(.*)", "dest": "api/index.js" }
+=======
+    { "src": "/(.*)", "dest": "api/index.js" }
+>>>>>>> b923787f6e799fdfe6f0588dd45cf3983e9bdfd7
   ]
 }
