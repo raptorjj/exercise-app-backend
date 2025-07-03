@@ -1,100 +1,66 @@
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-
+// 환경변수는 Vercel 대시보드에서 입력해야 함
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+const app = express();
+app.use(cors({ origin: '*' }));
+app.use(express.json());
+
+// 파일 업로드용 multer
 const upload = multer({ storage: multer.memoryStorage() });
-console.log('URL:', process.env.SUPABASE_URL);
-console.log('KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-// 1. 모든 사용자 운동 현황 조회
-app.get('/status', async (req, res) => {
-  // 이번주(월~일) 기준 계산
-  const today = new Date();
-  const monday = new Date(today.setDate(today.getDate() - today.getDay() + 1));
-  const sunday = new Date(today.setDate(monday.getDate() + 6));
-  const mondayStr = monday.toISOString().slice(0,10);
-  const sundayStr = sunday.toISOString().slice(0,10);
+// 1. 상태 확인 API (테스트용)
+app.get('/api/status', (req, res) => {
+  res.json({ status: 'ok' });
+});
 
-  // 사용자별 이번주 카운트, 최근 사진, 경고 조회
-  const { data: users } = await supabase.from('users').select('*');
-  const result = [];
-
-  for (const user of users) {
-    // 이번주 인증 로그
-    const { data: logs } = await supabase
-      .from('exercise_logs')
-      .select('*')
-      .eq('user_id', user.id)
-      .gte('date', mondayStr)
-      .lte('date', sundayStr);
-
-    // 최근 인증 로그
-    const recent = logs && logs.length ? logs[logs.length - 1] : null;
-    result.push({
-      id: user.id,
-      username: user.username,
-      weekCount: logs.length,
-      warningCount: user.warning_count,
-      thumbUrl: recent ? recent.thumb_url : null,
-      imageUrl: recent ? recent.image_url : null,
-    });
+// 2. 사용자 운동 현황 조회 (예시)
+app.get('/api/users', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('users').select('*');
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-
-  res.json(result);
 });
 
-// 2. 사진 업로드 및 인증
-app.post('/upload', upload.single('image'), async (req, res) => {
-  const { user_id } = req.body;
-  const file = req.file;
-  if (!file) return res.status(400).json({ error: 'No file uploaded' });
+// 3. 사진 업로드 및 인증 (예시)
+app.post('/api/upload', upload.single('image'), async (req, res) => {
+  try {
+    const { user_id } = req.body;
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: 'No file uploaded' });
 
-  // 오늘 인증 여부 확인
-  const today = new Date().toISOString().slice(0,10);
-  const { data: todayLog } = await supabase
-    .from('exercise_logs')
-    .select('*')
-    .eq('user_id', user_id)
-    .eq('date', today);
+    // Supabase Storage에 업로드
+    const { data, error } = await supabase.storage
+      .from('exercise-images')
+      .upload(`${user_id}/${Date.now()}_${file.originalname}`, file.buffer, {
+        contentType: file.mimetype,
+        upsert: true,
+      });
+    if (error) throw error;
 
-  if (todayLog && todayLog.length > 0) {
-    return res.status(400).json({ error: '오늘 이미 인증했습니다.' });
+    // 인증 로그 DB 저장(예시)
+    await supabase.from('exercise_logs').insert([
+      {
+        user_id,
+        date: new Date().toISOString().slice(0,10),
+        image_url: data.path,
+        thumb_url: data.path, // 실제로는 썸네일 별도 처리 권장
+      }
+    ]);
+    res.json({ message: '인증 완료', image_url: data.path });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-
-  // 원본 업로드
-  const { data, error } = await supabase.storage
-    .from('exercise-images')
-    .upload(`${user_id}/${Date.now()}_${file.originalname}`, file.buffer, {
-      contentType: file.mimetype,
-      upsert: true,
-    });
-
-  if (error) return res.status(500).json({ error: error.message });
-
-  // (실제 서비스는 썸네일 생성 필요, 여기선 원본만 저장)
-  const image_url = data.path;
-  const thumb_url = image_url; // 실제로는 썸네일 별도 생성
-
-  // 인증 로그 저장
-  await supabase.from('exercise_logs').insert([{
-    user_id,
-    date: today,
-    image_url,
-    thumb_url,
-  }]);
-
-  res.json({ message: '인증 완료', image_url });
 });
 
-app.listen(process.env.PORT, () => {
-  console.log('Server running');
-});
+// 서버리스 함수 방식: module.exports = app
+module.exports = app;
