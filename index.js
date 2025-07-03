@@ -2,13 +2,13 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
-const { createClient } = require('supabase/supabase-js');
+const { createClient } = require('SUPABASE_URL/SUPABASE_KEY');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 const upload = multer({ storage: multer.memoryStorage() });
 
 // 1. 모든 사용자 운동 현황 조회
